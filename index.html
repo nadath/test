@@ -2,95 +2,289 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Soroban Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Soroban Canvas Quiz</title>
   <style>
     html, body {
       margin: 0; padding: 0;
-      width: 100%; height: 100%;
-      font-family: sans-serif;
+      width: 100vw; height: 100vh; overflow: hidden;
       background: #b3c4e7;
-      overflow: hidden;
-      position: relative; /* ensure body is non-static */
     }
-    .quiz-container {
-      position: absolute; top: 0; left: 0;
-      height: 100%; overflow-y: auto;
+    #abacusBg {
+      position: absolute;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      display: block;
+      z-index: 1;
+      background: #b3c4e7;
+      touch-action: none;
+      user-select: none;
+    }
+    #quizPanel {
+      position: absolute;
+      top: 0; left: 0;
+      width: clamp(240px, 20vw, 360px);
+      height: 100vh;
       background: rgba(140,166,219,0.9);
-      color: #fff; z-index: 2;
-      display: flex; flex-direction: column;
-      padding: 1rem; box-sizing: border-box;
+      color: #fff;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      overflow-y: auto;
     }
-    .quiz-box { width: 100%; display: flex; flex-direction: column; gap: 1rem; }
-    .question-row { position: relative; }
-    .q-num {
-      position: absolute; top: -1rem; left: 0;
-      background: #668cff; padding: 0.2rem 0.6rem;
-      border-radius: 0.4rem; font-weight: bold;
+    #fullscreenBtn {
+      align-self: flex-end;
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #fff;
+      margin-bottom: 0.5rem;
     }
-    .question-text { font-size: 1.5rem; font-weight: bold; text-align: center; margin-top: 1.2rem; }
-    .input-label { font-weight: bold; margin-bottom: 0.4rem; }
-    .input-section { display: flex; gap: 0.5rem; }
-    .answer-display {
-      flex: 1; padding: 0.6rem; font-size: 1.2rem;
-      background: #fff; color: #333; border: 2px solid #b993d6;
-      border-radius: 0.4rem; text-align: right; cursor: pointer;
+    #quizContent {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .send-btn {
-      padding: 0.6rem 1rem; font-size: 1rem;
-      background: #668cff; color: #fff;
-      border: none; border-radius: 0.4rem; cursor: pointer;
+    .question { display: flex; align-items: center; gap: 0.5rem; }
+    #qNum {
+      background: #668cff;
+      padding: 0.3rem 0.8rem;
+      border-radius: 0.3rem;
+      font-weight: bold;
     }
-    .numpad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
-    .numpad button {
-      padding: 0.8rem; font-size: 1.2rem;
-      background: #668cff; color: #fff;
-      border: none; border-radius: 0.4rem; cursor: pointer;
+    #qText {
+      flex: 1;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-left: 0.5rem;
     }
-    #quizTimer { text-align: center; font-weight: bold; }
-    @media (min-width: 1025px) { .quiz-container { width: 20vw; min-width: 280px; max-width: 360px; } }
-    @media (min-width: 769px) and (max-width: 1024px) { .quiz-container { width: 30vw; min-width: 260px; } .question-text { font-size: 1.3rem; } }
+    .input-label { font-weight: bold; }
+    .inputArea { display: flex; gap: 0.5rem; align-items: center; }
+    #answerDisplay {
+      flex: 1;
+      background: #fff;
+      color: #333;
+      text-align: right;
+      padding: 0.5rem;
+      border: 2px solid #b993d6;
+      border-radius: 0.4rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    #sendBtn {
+      background: #668cff;
+      border: none;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #numpad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    #numpad button {
+      background: #668cff;
+      border: none;
+      color: #fff;
+      padding: 0.6rem;
+      border-radius: 0.4rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    #quizTimer { text-align: center; font-weight: bold; margin-top: auto; }
+    @media (max-width: 1024px) {
+      #quizPanel { width: clamp(200px, 30vw, 360px); }
+      #qText { font-size: 1.3rem; }
+    }
     @media (max-width: 768px) {
-      .quiz-container {
-        position: fixed; bottom: 0; left: 0;
-        width: 100%; height: auto; max-height: 45vh;
-        padding: 0.5rem;
-      }
-      .question-text { font-size: 1.2rem; }
-      .numpad { gap: 0.3rem; }
-      .numpad button { padding: 0.6rem; font-size: 1rem; }
+      #quizPanel { position: fixed; bottom: 0; left: 0; width: 100vw; max-height: 45vh; padding: 0.5rem; }
+      #qText { font-size: 1.2rem; }
+      #numpad button { font-size: 1rem; padding: 0.5rem; }
     }
   </style>
 </head>
 <body>
-  <!-- iframe covers parent container with absolute positioning -->
-  <iframe id="sorobanFrame" src="soroban.html"
-    style="position:absolute; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:1;"
-    allowfullscreen>
-    Your browser doesn't support iframes
-  </iframe>
-
-  <!-- Quiz panel -->
-  <div class="quiz-container">
-    <div class="quiz-box">
-      <div class="question-row">
-        <div class="q-num" id="qNum">Q1</div>
-        <div class="question-text" id="questionText">9 × 25 =</div>
+  <canvas id="abacusBg"></canvas>
+  <div id="quizPanel">
+    <button id="fullscreenBtn" title="Toggle Fullscreen">⛶</button>
+    <div id="quizContent">
+      <div class="question">
+        <div id="qNum">Q1</div>
+        <div id="qText">9 × 25 =</div>
       </div>
       <div>
-        <label class="input-label">Answer</label>
-        <div class="input-section">
-          <div class="answer-display" id="currentInput">0</div>
-          <button class="send-btn" id="sendBtn">Send</button>
+        <div class="input-label">Answer</div>
+        <div class="inputArea">
+          <div id="answerDisplay">0</div>
+          <button id="sendBtn">Send</button>
         </div>
       </div>
-      <div class="numpad" id="numpad"></div>
+      <div id="numpad"></div>
       <div id="quizTimer">Time Left: 10:00</div>
     </div>
   </div>
-
   <script>
-    // Remove display:none logic; iframe always present
+    // --- CANVAS SOROBAN ABACUS LOGIC ---
+    const canvas = document.getElementById('abacusBg');
+    let ctx = canvas.getContext('2d');
+
+    // Model (same as your HTML version)
+    const RODS = 7, BEADS_BELOW = 4, BEADS_ABOVE = 1;
+    let beadState = Array.from({length: RODS}, ()=>({
+      above: [false], // 1 bead, false = up
+      below: [false,false,false,false] // 4 beads, false = down
+    }));
+
+    // To remember pressed bead
+    let pressed = null;
+
+    function abacusLayout() {
+      // All layout values based on canvas size (match your HTML logic)
+      const leftPad = canvas.width*0.04, rightPad = canvas.width*0.04;
+      const topPad = canvas.height*0.04, botPad = canvas.height*0.08;
+      const rodGap = (canvas.width-leftPad-rightPad)/(RODS-1);
+      const beadW = rodGap*0.90, beadH = (canvas.height-topPad-botPad)/7.3;
+      return { leftPad, rightPad, topPad, botPad, rodGap, beadW, beadH };
+    }
+
+    function drawAbacus() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const { leftPad, rightPad, topPad, botPad, rodGap, beadW, beadH } = abacusLayout();
+      // Rod lines
+      for(let r=0;r<RODS;r++) {
+        let rx = leftPad+rodGap*r;
+        ctx.save();
+        ctx.strokeStyle = "#6666ff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(rx, topPad);
+        ctx.lineTo(rx, canvas.height-botPad);
+        ctx.stroke();
+        ctx.restore();
+      }
+      // Horizontal divider (bar)
+      let barY = topPad + beadH*1.2 + beadH*0.20 + beadH*0.20;
+      ctx.save();
+      ctx.strokeStyle = "#6666ff";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(leftPad-beadW/2, barY);
+      ctx.lineTo(canvas.width-rightPad+beadW/2, barY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw heaven beads (top row)
+      for(let r=0;r<RODS;r++) {
+        let rx = leftPad+rodGap*r;
+        // Start position
+        let yTop = topPad + beadH/2;
+        let isActive = beadState[r].above[0];
+        // If active, heaven bead moves DOWN to touch bar
+        let y = isActive ? barY - beadH/2 : yTop;
+        drawHexBead(rx, y, beadW, beadH, isActive, pressed && pressed.rod===r && pressed.region==="above");
+      }
+
+      // Draw earth beads (bottom 4 rows)
+      for(let r=0;r<RODS;r++) for(let b=0;b<BEADS_BELOW;b++) {
+        let rx = leftPad+rodGap*r;
+        // Start from bottom, add up for each bead
+        let baseY = canvas.height-botPad-beadH/2;
+        let y = baseY - beadH*b;
+        // If active, earth bead moves UP to touch bar
+        let isActive = beadState[r].below[b];
+        if (isActive) y = barY + beadH/2 + beadH*b;
+        drawHexBead(rx, y, beadW, beadH, isActive, pressed && pressed.rod===r && pressed.region==="below" && pressed.index===b);
+      }
+    }
+
+    function drawHexBead(cx, cy, w, h, active, pressed) {
+      // Colors to match your original design
+      let fill = active ? "gold" : "#102057";
+      if (pressed) fill = "#ffd700";
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        let angle = Math.PI/3 * i - Math.PI/6;
+        let x = cx + Math.cos(angle)*w/2;
+        let y = cy + Math.sin(angle)*h/2;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.closePath();
+      ctx.shadowColor = "#0009";
+      ctx.shadowBlur = active ? 10 : 5;
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#1b2961";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Logic for bead click/drag (replicate your HTML code's logic)
+    function findBead(mx, my) {
+      const { leftPad, rodGap, beadW, beadH } = abacusLayout();
+      // Heaven: check if mouse is close to bead position (top row)
+      let yHeavenUp = abacusLayout().topPad + beadH/2;
+      let yBar = abacusLayout().topPad + beadH*1.2 + beadH*0.20 + beadH*0.20;
+      // Earth: from bottom up, check bead position
+      let yBase = canvas.height-abacusLayout().botPad-beadH/2;
+      for(let r=0;r<RODS;r++) {
+        let rx = leftPad+rodGap*r;
+        // Heaven bead
+        let y = beadState[r].above[0] ? yBar - beadH/2 : yHeavenUp;
+        if (Math.abs(mx-rx)<beadW*0.45 && Math.abs(my-y)<beadH*0.55)
+          return {rod:r, region:'above', index:0};
+        // Earth beads
+        for(let b=0;b<BEADS_BELOW;b++) {
+          let y = beadState[r].below[b] ? yBar + beadH/2 + beadH*b : yBase - beadH*b;
+          if (Math.abs(mx-rx)<beadW*0.45 && Math.abs(my-y)<beadH*0.55)
+            return {rod:r, region:'below', index:b};
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener('pointerdown', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX-rect.left)*canvas.width/rect.width;
+      const my = (e.clientY-rect.top)*canvas.height/rect.height;
+      let bead = findBead(mx, my);
+      if (!bead) return;
+      pressed = bead;
+
+      // Logic from your HTML code: activate/deactivate
+      if (bead.region==="above") {
+        beadState[bead.rod].above[0] = !beadState[bead.rod].above[0];
+      }
+      if (bead.region==="below") {
+        let active = !beadState[bead.rod].below[bead.index];
+        for(let i=0;i<BEADS_BELOW;i++) {
+          if (i<=bead.index) beadState[bead.rod].below[i]=active;
+          else beadState[bead.rod].below[i]=false;
+        }
+      }
+      drawAbacus();
+    });
+    canvas.addEventListener('pointerup', function() { pressed=null; drawAbacus(); });
+    canvas.addEventListener('pointercancel', function() { pressed=null; drawAbacus(); });
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drawAbacus();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // -- QUIZ LOGIC (unchanged from previous) --
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    });
+
     const QUESTIONS = [
       { q: '9 × 25', a: '225' }, { q: '120 + 4', a: '124' },
       { q: '250 - 10', a: '240' }, { q: '13 + 17', a: '30' },
@@ -99,46 +293,36 @@
       { q: '80 - 15', a: '65' }, { q: '5 × 6', a: '30' }
     ];
     let currentIndex = 0, answers = [], currentInput = '', inputLocked = false, timerInterval, timeLeft = 600;
-    const currentDisplay = document.getElementById('currentInput'),
-          quizTimer = document.getElementById('quizTimer'),
-          sendBtn = document.getElementById('sendBtn'),
-          padContainer = document.getElementById('numpad');
+    const qNumEl = document.getElementById('qNum'), qTextEl = document.getElementById('qText');
+    const answerEl = document.getElementById('answerDisplay'), sendBtnEl = document.getElementById('sendBtn');
+    const timerEl = document.getElementById('quizTimer'), padContainer = document.getElementById('numpad');
 
     function loadQuestion() {
       const q = QUESTIONS[currentIndex];
-      document.getElementById('qNum').textContent = `Q${currentIndex+1}`;
-      document.getElementById('questionText').textContent = `${q.q} =`;
-      currentInput = ''; inputLocked = false; currentDisplay.textContent = '0'; sendBtn.disabled = false;
+      qNumEl.textContent = `Q${currentIndex+1}`;
+      qTextEl.textContent = `${q.q} =`;
+      currentInput = ''; inputLocked = false; answerEl.textContent = '0'; sendBtnEl.disabled = false;
     }
     function updateTimer() {
       const m = String(Math.floor(timeLeft/60)).padStart(2,'0'), s = String(timeLeft%60).padStart(2,'0');
-      quizTimer.textContent = `Time Left: ${m}:${s}`;
+      timerEl.textContent = `Time Left: ${m}:${s}`;
     }
     function appendDigit(d) {
       if (inputLocked) return;
       if (d==='C') currentInput=''; else if(d==='BACK') currentInput=currentInput.slice(0,-1); else currentInput+=d;
-      currentDisplay.textContent = currentInput||'0';
+      answerEl.textContent = currentInput||'0';
     }
-    function submitAnswer() {
-      if (inputLocked) return; inputLocked = true;
+    function submitAnswer() { if (inputLocked) return; inputLocked=true;
       answers.push({ question: QUESTIONS[currentIndex].q, correct: QUESTIONS[currentIndex].a, user: currentInput });
-      sendBtn.disabled = true; currentIndex++;
-      if (currentIndex < QUESTIONS.length) setTimeout(loadQuestion, 200);
-      else finishQuiz();
-    }
-    function finishQuiz() { clearInterval(timerInterval);
-      localStorage.setItem('sorobanResults', JSON.stringify(answers)); window.location.href='results.html'; }
-    function startQuiz() { currentIndex=0; answers=[]; timeLeft=600; loadQuestion(); updateTimer();
-      timerInterval = setInterval(() => { timeLeft--; updateTimer(); if(timeLeft<=0) finishQuiz(); },1000);
-    }
-    ['0','1','2','3','4','5','6','7','8','9','C','BACK'].forEach(d => {
-      const b = document.createElement('button');
-      if (d==='BACK') b.innerHTML = `<svg width="24" height="24" viewBox="0 0 32 32"><g><path d="M6 16 L14 8 H26 Q28 8 28 10 V22 Q28 24 26 24 H14 L6 16 Z" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/><line x1="17" y1="13" x2="23" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/><line x1="23" y1="13" x2="17" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/></g></svg>`;
-      else b.textContent = d;
-      b.addEventListener('click', () => appendDigit(d)); padContainer.appendChild(b);
+      sendBtnEl.disabled=true; currentIndex<QUESTIONS.length-1?setTimeout(loadQuestion,200):finishQuiz(); }
+    function finishQuiz(){ clearInterval(timerInterval); localStorage.setItem('sorobanResults', JSON.stringify(answers)); window.location.href='results.html'; }
+    function startQuiz(){ currentIndex=0; answers=[]; timeLeft=600; loadQuestion(); updateTimer(); timerInterval=setInterval(()=>{ timeLeft--; updateTimer(); if(timeLeft<=0) finishQuiz(); },1000); }
+    ['0','1','2','3','4','5','6','7','8','9','C','BACK'].forEach(d=>{ const b=document.createElement('button');
+      if(d==='BACK') b.innerHTML='<svg width=\"24\" height=\"24\" viewBox=\"0 0 32 32\"><g><path d=\"M6 16 L14 8 H26 Q28 8 28 10 V22 Q28 24 26 24 H14 L6 16 Z\" fill=\"none\" stroke=\"white\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/><line x1=\"17\" y1=\"13\" x2=\"23\" y2=\"19\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"23\" y1=\"13\" x2=\"17\" y2=\"19\" stroke=\"white\" stroke-width=\"2.5\" stroke-linecap=\"round\"/></g></svg>';
+      else b.textContent=d; b.addEventListener('click',()=>appendDigit(d)); padContainer.appendChild(b);
     });
-    sendBtn.addEventListener('click', submitAnswer); currentDisplay.addEventListener('click', submitAnswer);
-    startQuiz();
+    sendBtnEl.addEventListener('click',submitAnswer); answerEl.addEventListener('click',submitAnswer); startQuiz();
+
   </script>
 </body>
 </html>
